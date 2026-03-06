@@ -8,7 +8,7 @@ on:
     branches:
       - main
   workflow_dispatch:
-  workflow_call:          # ← neu: erlaubt Aufruf aus release.yml
+  workflow_call:
     inputs:
       tag:
         description: 'Tag to build (e.g. v1.2.3)'
@@ -31,7 +31,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.tag || github.ref }}   # ← neu: bei workflow_call den Tag auschecken
+          ref: ${{ inputs.tag || github.ref }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
