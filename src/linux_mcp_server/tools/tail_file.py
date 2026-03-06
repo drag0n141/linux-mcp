@@ -6,7 +6,6 @@ from mcp.types import ToolAnnotations
 from pydantic import Field
 
 from linux_mcp_server.audit import log_tool_call
-from linux_mcp_server.config import CONFIG
 from linux_mcp_server.connection.ssh import execute_with_fallback
 from linux_mcp_server.server import mcp
 from linux_mcp_server.utils.types import Host
@@ -16,8 +15,7 @@ from linux_mcp_server.utils.types import Host
     title="Tail file",
     description=(
         "Read the last N lines of a file on a remote host via SSH. "
-        "Requires LINUX_MCP_TAIL_ENABLED=true. "
-        "If LINUX_MCP_ALLOWED_TAIL_PATHS is set, only whitelisted paths are permitted. "
+        "Always available, no configuration required. "
         "Returns the last N lines of the file."
     ),
     tags={"files", "logs", "tail"},
@@ -44,27 +42,9 @@ async def tail_file(
 ) -> str:
     """Read the last N lines of a file on the target host.
 
-    Security controls (via environment variables):
-    - LINUX_MCP_TAIL_ENABLED=true              required to enable this tool
-    - LINUX_MCP_ALLOWED_TAIL_PATHS=/var/log     comma-separated allowlist of permitted paths;
-      if empty, all paths are allowed
-
+    No configuration required - always available.
     Returns the last N lines of the file as plain text.
     """
-    if not CONFIG.tail_enabled:
-        return (
-            "ERROR: tail_file is disabled. "
-            "Set LINUX_MCP_TAIL_ENABLED=true to enable it."
-        )
-
-    allowed = CONFIG.allowed_tail_paths_list
-    if allowed:
-        if not any(path.startswith(allowed_path) for allowed_path in allowed):
-            return (
-                f"ERROR: '{path}' is not in the allowed paths. "
-                f"Allowed: {', '.join(allowed)}"
-            )
-
     args = ("tail", "-n", str(lines), path)
     returncode, stdout, stderr = await execute_with_fallback(args, host=host)
 
