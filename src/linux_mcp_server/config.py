@@ -71,13 +71,6 @@ class Config(BaseSettings):
     # If empty, all commands are allowed (only relevant when execute_enabled=true)
     allowed_commands: str = ""
 
-    # --- tail_file tool ---
-    # LINUX_MCP_TAIL_ENABLED=true enables the tail_file tool (disabled by default)
-    tail_enabled: bool = False
-    # LINUX_MCP_ALLOWED_TAIL_PATHS=/var/log/syslog,/var/log/app.log  comma-separated allowlist
-    # If empty, all paths are allowed (only relevant when tail_enabled=true)
-    allowed_tail_paths: str = ""
-
     # --- write_file tool ---
     # LINUX_MCP_WRITE_ENABLED=true enables the write_file tool (disabled by default)
     write_enabled: bool = False
@@ -98,13 +91,6 @@ class Config(BaseSettings):
         if not self.allowed_commands:
             return []
         return [cmd.strip() for cmd in self.allowed_commands.split(",") if cmd.strip()]
-
-    @property
-    def allowed_tail_paths_list(self) -> list[str]:
-        """Return the allowed tail paths as a list, stripping whitespace."""
-        if not self.allowed_tail_paths:
-            return []
-        return [p.strip() for p in self.allowed_tail_paths.split(",") if p.strip()]
 
     @property
     def allowed_write_paths_list(self) -> list[str]:
