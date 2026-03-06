@@ -4,12 +4,16 @@ on:
   push:
     branches:
       - main
-    tags:
-      - 'v*.*.*'
   pull_request:
     branches:
       - main
   workflow_dispatch:
+  workflow_call:          # ← neu: erlaubt Aufruf aus release.yml
+    inputs:
+      tag:
+        description: 'Tag to build (e.g. v1.2.3)'
+        required: false
+        type: string
 
 env:
   REGISTRY: ghcr.io
@@ -26,6 +30,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}   # ← neu: bei workflow_call den Tag auschecken
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -52,7 +58,8 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=sha,prefix=sha-
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || inputs.tag != '' }}
+            type=raw,value=${{ inputs.tag }},enable=${{ inputs.tag != '' }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
