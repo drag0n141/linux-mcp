@@ -1,0 +1,112 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest tag
+        id: latest_tag
+        run: |
+          TAG=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n1)
+          if [ -z "$TAG" ]; then
+            TAG="v0.0.0"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Latest tag: $TAG"
+
+      - name: Bump version
+        id: bump
+        run: |
+          TAG=${{ steps.latest_tag.outputs.tag }}
+          VERSION=${TAG#v}
+          MAJOR=$(echo "$VERSION" | cut -d. -f1)
+          MINOR=$(echo "$VERSION" | cut -d. -f2)
+          PATCH=$(echo "$VERSION" | cut -d. -f3)
+
+          case "${{ github.event.inputs.bump }}" in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            patch)
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
+
+          NEW_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
+          echo "version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "New version: $NEW_VERSION"
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          PREV_TAG=${{ steps.latest_tag.outputs.tag }}
+          NEW_VERSION=${{ steps.bump.outputs.version }}
+
+          if [ "$PREV_TAG" = "v0.0.0" ]; then
+            COMMITS=$(git log --pretty=format:'- %s (%h)' | head -20)
+          else
+            COMMITS=$(git log "${PREV_TAG}..HEAD" --pretty=format:'- %s (%h)')
+          fi
+
+          if [ -z "$COMMITS" ]; then
+            COMMITS="- No changes since last release"
+          fi
+
+          cat > /tmp/changelog.md << EOF
+          ## What's Changed
+
+          ${COMMITS}
+
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${NEW_VERSION}
+          EOF
+
+          echo "changelog_file=/tmp/changelog.md" >> "$GITHUB_OUTPUT"
+
+      - name: Create tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a ${{ steps.bump.outputs.version }} -m "Release ${{ steps.bump.outputs.version }}"
+          git push origin ${{ steps.bump.outputs.version }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.bump.outputs.version }}
+          name: ${{ steps.bump.outputs.version }}
+          body_path: /tmp/changelog.md
+          prerelease: ${{ github.event.inputs.prerelease }}
+          make_latest: ${{ github.event.inputs.prerelease == 'false' }}
