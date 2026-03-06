@@ -5,6 +5,9 @@ from linux_mcp_server.tools.execute import execute_command
 from linux_mcp_server.tools.logs import get_journal_logs
 from linux_mcp_server.tools.logs import read_log_file
 
+# manage_service
+from linux_mcp_server.tools.manage_service import manage_service
+
 # network
 from linux_mcp_server.tools.network import get_listening_ports
 from linux_mcp_server.tools.network import get_network_connections
@@ -32,6 +35,12 @@ from linux_mcp_server.tools.system_info import get_hardware_information
 from linux_mcp_server.tools.system_info import get_memory_information
 from linux_mcp_server.tools.system_info import get_system_information
 
+# tail_file
+from linux_mcp_server.tools.tail_file import tail_file
+
+# write_file
+from linux_mcp_server.tools.write_file import write_file
+
 
 __all__ = [
     "execute_command",
@@ -52,6 +61,9 @@ __all__ = [
     "list_files",
     "list_processes",
     "list_services",
+    "manage_service",
     "read_file",
     "read_log_file",
+    "tail_file",
+    "write_file",
 ]

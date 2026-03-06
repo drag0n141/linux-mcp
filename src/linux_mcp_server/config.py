@@ -64,12 +64,33 @@ class Config(BaseSettings):
     # Command execution timeout (applies to remote SSH commands)
     command_timeout: int = 30  # Timeout in seconds; prevents hung SSH operations
 
-    # Execute tool configuration
+    # --- execute_command tool ---
     # LINUX_MCP_EXECUTE_ENABLED=true enables the execute_command tool (disabled by default)
     execute_enabled: bool = False
-    # LINUX_MCP_ALLOWED_COMMANDS=curl,python3,pip comma-separated whitelist of allowed binaries
+    # LINUX_MCP_ALLOWED_COMMANDS=curl,python3  comma-separated whitelist of allowed binaries
     # If empty, all commands are allowed (only relevant when execute_enabled=true)
     allowed_commands: str = ""
+
+    # --- tail_file tool ---
+    # LINUX_MCP_TAIL_ENABLED=true enables the tail_file tool (disabled by default)
+    tail_enabled: bool = False
+    # LINUX_MCP_ALLOWED_TAIL_PATHS=/var/log/syslog,/var/log/app.log  comma-separated allowlist
+    # If empty, all paths are allowed (only relevant when tail_enabled=true)
+    allowed_tail_paths: str = ""
+
+    # --- write_file tool ---
+    # LINUX_MCP_WRITE_ENABLED=true enables the write_file tool (disabled by default)
+    write_enabled: bool = False
+    # LINUX_MCP_ALLOWED_WRITE_PATHS=/tmp,/etc/app  comma-separated allowlist of writable directories
+    # If empty, all paths are allowed (only relevant when write_enabled=true)
+    allowed_write_paths: str = ""
+
+    # --- manage_service tool ---
+    # LINUX_MCP_MANAGE_SERVICES_ENABLED=true enables the manage_service tool (disabled by default)
+    manage_services_enabled: bool = False
+    # LINUX_MCP_ALLOWED_SERVICES=nginx,postgresql  comma-separated whitelist of manageable services
+    # If empty, all services are allowed (only relevant when manage_services_enabled=true)
+    allowed_services: str = ""
 
     @property
     def allowed_commands_list(self) -> list[str]:
@@ -77,6 +98,27 @@ class Config(BaseSettings):
         if not self.allowed_commands:
             return []
         return [cmd.strip() for cmd in self.allowed_commands.split(",") if cmd.strip()]
+
+    @property
+    def allowed_tail_paths_list(self) -> list[str]:
+        """Return the allowed tail paths as a list, stripping whitespace."""
+        if not self.allowed_tail_paths:
+            return []
+        return [p.strip() for p in self.allowed_tail_paths.split(",") if p.strip()]
+
+    @property
+    def allowed_write_paths_list(self) -> list[str]:
+        """Return the allowed write paths as a list, stripping whitespace."""
+        if not self.allowed_write_paths:
+            return []
+        return [p.strip() for p in self.allowed_write_paths.split(",") if p.strip()]
+
+    @property
+    def allowed_services_list(self) -> list[str]:
+        """Return the allowed services as a list, stripping whitespace."""
+        if not self.allowed_services:
+            return []
+        return [s.strip() for s in self.allowed_services.split(",") if s.strip()]
 
     @property
     def effective_known_hosts_path(self) -> Path:
