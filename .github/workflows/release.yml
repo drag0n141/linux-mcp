@@ -24,6 +24,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
 
     steps:
       - name: Checkout
@@ -110,3 +112,13 @@ jobs:
           body_path: /tmp/changelog.md
           prerelease: ${{ github.event.inputs.prerelease }}
           make_latest: ${{ github.event.inputs.prerelease == 'false' }}
+
+  container:
+    name: Build & Push Container
+    needs: release
+    uses: ./.github/workflows/container.yml
+    with:
+      tag: ${{ needs.release.outputs.version }}
+    permissions:
+      contents: read
+      packages: write
